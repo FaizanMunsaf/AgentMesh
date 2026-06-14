@@ -70,7 +70,7 @@ The Firewall is **not** a preprocessing step — it is a queryable Band particip
 
 ---
 
-## What the Orchestration Teammate Needs to Do
+## What the Orchestration will look like after agents are created
 
 ### 1. Register 4 agents on the Band dashboard
 
