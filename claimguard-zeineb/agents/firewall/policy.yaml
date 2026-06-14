@@ -28,7 +28,7 @@ fields:
       action: block
 
   incident_location:
-    sensitivity: LOW
+    sensitivity: MEDIUM
     assessment:
       action: pass
     payout:
