@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "claimguard"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "band-sdk[langgraph]",
+    "openai>=1.0",
+    "pydantic>=2",
+    "chromadb>=0.5",
+    "sentence-transformers>=3.0",
+    "python-dotenv",
+    "langchain-openai>=0.2",
+    "langgraph>=0.2",
+    "PyYAML",
+    "pypdf>=4.0",
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["claimguard"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

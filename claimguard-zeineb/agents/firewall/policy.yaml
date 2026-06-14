@@ -1,0 +1,95 @@
+fields:
+  name:
+    sensitivity: LOW
+    assessment:
+      action: pass
+    payout:
+      action: pass
+
+  ssn:
+    sensitivity: HIGH
+    assessment:
+      action: block
+    payout:
+      action: block
+
+  policy_number:
+    sensitivity: LOW
+    assessment:
+      action: pass
+    payout:
+      action: pass
+
+  incident_date:
+    sensitivity: LOW
+    assessment:
+      action: pass
+    payout:
+      action: block
+
+  incident_location:
+    sensitivity: LOW
+    assessment:
+      action: pass
+    payout:
+      action: block
+
+  coverage_type:
+    sensitivity: LOW
+    assessment:
+      action: pass
+    payout:
+      action: block
+
+  accident_description:
+    sensitivity: MEDIUM
+    assessment:
+      action: pass
+    payout:
+      action: block
+
+  medical_details:
+    sensitivity: HIGH
+    assessment:
+      action: transform
+      transform: severity_category
+      reason: "summarized to severity category to protect medical PII"
+    payout:
+      action: block
+
+  police_report_number:
+    sensitivity: LOW
+    assessment:
+      action: pass
+    payout:
+      action: block
+
+  other_party_info:
+    sensitivity: MEDIUM
+    assessment:
+      action: pass_justify
+      reason: "third-party PII needed for liability determination"
+    payout:
+      action: block
+
+  vehicle_info:
+    sensitivity: MEDIUM
+    assessment:
+      action: pass
+    payout:
+      action: block
+
+  claim_amount:
+    sensitivity: LOW
+    assessment:
+      action: pass
+    payout:
+      action: pass
+
+  bank_account:
+    sensitivity: HIGH
+    assessment:
+      action: block
+    payout:
+      action: pass_justify
+      reason: "core disbursement field required to execute payment"
