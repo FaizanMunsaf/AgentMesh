@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import PageHeader from '@/components/layout/PageHeader';
 import { mockMessages, mockAgentSteps } from '@/lib/data';
 import { ChatMessage, AgentStep, AgentStatus, ClaimStatus } from '@/lib/types';
@@ -102,15 +102,15 @@ export default function ClaimsPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const sendMessage = (text: string) => {
+  const sendMessage = useCallback((text: string) => {
     if (!text.trim()) return;
     setStarted(true);
 
     const userMsg: ChatMessage = {
-      id: Date.now().toString(),
+      id: Math.random().toString(36).slice(2),
       role: 'user',
       content: text,
-      timestamp: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      timestamp: new Date().toTimeString().slice(0, 8),
     };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
@@ -120,15 +120,15 @@ export default function ClaimsPage() {
       setIsTyping(false);
       const mockReply = mockMessages.find(m => m.role === 'assistant');
       const assistantMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: Math.random().toString(36).slice(2),
         role: 'assistant',
         content: mockReply?.content || "I've received your message and am processing your claim. The agent pipeline has been initiated.",
-        timestamp: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        timestamp: new Date().toTimeString().slice(0, 8),
         claimSummary: messages.length === 0 ? mockReply?.claimSummary : undefined,
       };
       setMessages(prev => [...prev, assistantMsg]);
     }, 1800);
-  };
+  }, [messages]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
