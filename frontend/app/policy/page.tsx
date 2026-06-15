@@ -1,7 +1,6 @@
-'use client';
-
-import { useState } from 'react';
 import PageHeader from '@/components/layout/PageHeader';
+import PolicyAccordion from '@/components/policy/PolicyAccordion';
+import CoverageCard from '@/components/policy/CoverageCard';
 
 const coverageTypes = [
   { icon: '🚗', title: 'Collision Coverage', desc: 'Covers physical damage to the insured vehicle from a collision with another vehicle or object, regardless of fault. Includes single-vehicle accidents.' },
@@ -23,60 +22,33 @@ const limits = [
   { range: '> $10,000', detail: 'Must escalate to a human senior examiner — AI findings are advisory only', color: 'var(--red)', bg: 'var(--red-bg)', border: 'rgba(239,68,68,0.2)' },
 ];
 
-function Accordion({ title, children, defaultOpen }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
-  const [open, setOpen] = useState(defaultOpen ?? false);
-  return (
-    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', marginBottom: '10px' }}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        style={{
-          width: '100%', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer',
-          fontFamily: 'var(--font-sans)', textAlign: 'left',
-        }}
-      >
-        <span style={{ fontWeight: 600, fontSize: '14px' }}>{title}</span>
-        <span style={{ color: 'var(--text-muted)', fontSize: '16px', transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'none' }}>⌄</span>
-      </button>
-      {open && (
-        <div style={{ padding: '0 20px 18px', borderTop: '1px solid var(--border-subtle)' }}>
-          {children}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function PolicyPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       <PageHeader title="Policy Reference" breadcrumb="NovaCover Internal System › Policy" />
 
       <div style={{ flex: 1, overflow: 'auto', padding: '24px 28px', maxWidth: '800px' }}>
+        {/* Info Header Banner */}
         <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '20px', padding: '10px 14px', background: 'var(--bg-elevated)', borderRadius: '8px', border: '1px solid var(--border)' }}>
           📄 NovaCover Auto Insurance Policy — synthetic document for ClaimGuard demo. Read-only reference for Assessment Agent RAG.
         </div>
 
-        {/* Section 1 */}
-        <Accordion title="Section 1 — Coverage Types" defaultOpen>
+        {/* Section 1 — Coverage Types */}
+        <PolicyAccordion title="Section 1 — Coverage Types" defaultOpen>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '14px' }}>
             {coverageTypes.map(ct => (
-              <div key={ct.title} style={{
-                display: 'flex', gap: '12px', padding: '14px',
-                background: 'var(--bg-elevated)', borderRadius: '10px', border: '1px solid var(--border)',
-              }}>
-                <div style={{ fontSize: '22px', flexShrink: 0 }}>{ct.icon}</div>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: '13px', marginBottom: '4px' }}>{ct.title}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>{ct.desc}</div>
-                </div>
-              </div>
+              <CoverageCard 
+                key={ct.title}
+                icon={ct.icon}
+                title={ct.title}
+                desc={ct.desc}
+              />
             ))}
           </div>
-        </Accordion>
+        </PolicyAccordion>
 
         {/* Section 2 — Covered Events */}
-        <Accordion title="Section 2 — Covered Events">
+        <PolicyAccordion title="Section 2 — Covered Events">
           <div style={{ paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {[
               'Two-vehicle accident: covered under Collision Coverage provided policy was active on the incident date.',
@@ -89,10 +61,10 @@ export default function PolicyPage() {
               </div>
             ))}
           </div>
-        </Accordion>
+        </PolicyAccordion>
 
         {/* Section 3 — Exclusions */}
-        <Accordion title="Section 3 — Exclusions">
+        <PolicyAccordion title="Section 3 — Exclusions">
           <div style={{ paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {exclusions.map((item, i) => (
               <div key={i} style={{ display: 'flex', gap: '10px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
@@ -101,10 +73,10 @@ export default function PolicyPage() {
               </div>
             ))}
           </div>
-        </Accordion>
+        </PolicyAccordion>
 
-        {/* Section 4 — Authority Limits */}
-        <Accordion title="Section 4 — Claims Authority Limits">
+        {/* Section 4 — Claims Authority Limits */}
+        <PolicyAccordion title="Section 4 — Claims Authority Limits">
           <div style={{ paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {limits.map(l => (
               <div key={l.range} style={{
@@ -116,10 +88,10 @@ export default function PolicyPage() {
               </div>
             ))}
           </div>
-        </Accordion>
+        </PolicyAccordion>
 
-        {/* Section 5 */}
-        <Accordion title="Section 5 — Supporting Documentation">
+        {/* Section 5 — Supporting Documentation */}
+        <PolicyAccordion title="Section 5 — Supporting Documentation">
           <div style={{ paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {[
               'For multi-party accidents, liability determination requires the other party\'s information to be recorded.',
@@ -131,7 +103,8 @@ export default function PolicyPage() {
               </div>
             ))}
           </div>
-        </Accordion>
+        </PolicyAccordion>
+
       </div>
     </div>
   );
