@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from band.config import settings
+from mesh_platform.settings import settings
 from models.claim import Base
 
 engine = create_async_engine(settings.database_url, echo=False)

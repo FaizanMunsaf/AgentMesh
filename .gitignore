@@ -41,7 +41,12 @@ backend/claims.db
 
 # Logs
 backend/logs/*.log
+backend/logs/decisions.jsonl
 !backend/logs/.gitkeep
+
+# RAG chunks (regenerate via scripts/ingest_rag.py)
+backend/data/chroma_db/
+backend/data/rag_chunks.json
 
 # OS
 Thumbs.db

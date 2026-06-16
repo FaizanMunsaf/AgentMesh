@@ -1,0 +1,12 @@
+intake:
+  agent_id: "c1f85cd7-3dfa-446d-a8aa-765ad0f629d6"
+  api_key: "band_a_1781589310_NR5f5EM0fH8xblyjs2Tj1FpPASwvDxE_"
+firewall:
+  agent_id: "f3d74911-0ea9-4bd1-a214-468cd48d295f"
+  api_key: "band_a_1781589398_R8XGjxNYqXQXC1vQpvmdcKe4gtVJQbIS"
+assessment:
+  agent_id: "3445443b-9186-4113-8ca5-258e212c6f9a"
+  api_key: "band_a_1781589498_IacH95WlMpFjib-o9Nnm0Yehc1Kj0UYW"
+payout:
+  agent_id: "726044dd-377a-4827-b9aa-daaaca1b9664"
+  api_key: "band_a_1781589596_RzAHoLkOIXsEXUTqr--vUjiRNe6VYVCQ"

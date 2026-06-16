@@ -4,9 +4,13 @@ pydantic>=2.10.0
 pydantic-settings>=2.6.0
 sqlalchemy>=2.0.36
 aiosqlite>=0.20.0
-band-sdk>=1.0.0
+band-sdk[langgraph]>=1.0.0
 python-dotenv>=1.0.1
 httpx>=0.28.0
+langchain-openai>=0.2.0
+langgraph>=0.2.0
+chromadb>=0.5.0
+PyYAML>=6.0
 
 # Dev / test
 pytest>=8.3.0

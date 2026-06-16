@@ -5,42 +5,36 @@ Production-grade hackathon project demonstrating a 4-agent insurance claims pipe
 ## Architecture
 
 ```
-Claim → Intake Agent → Firewall Agent → Assessment Agent → Payout Agent
+User → Intake → Assessment ⇄ Firewall → Payout
 ```
 
-Each agent communicates via Band and logs decisions to a shared audit trail visible on the dashboard.
+- **Local API mode**: FastAPI runs the full pipeline synchronously with firewall clearance
+- **Band mode**: 4 long-running agents communicate via @mentions in a Band chatroom
 
 ## Project Structure
 
 ```
-├── frontend/     Next.js 15 dashboard
-├── backend/      FastAPI + Band SDK agents
-├── docs/         Architecture & workflow docs
+├── frontend/              Next.js dashboard
+├── backend/               FastAPI + merged claimguard agents
+│   ├── agents/            intake, firewall, assessment, payout
+│   ├── scripts/           ingest_rag.py, start_agents.py
+│   └── data/              mock policies, policy docs, RAG chunks
+├── claimguard-zeineb/     Original reference implementation
 └── docker-compose.yml
 ```
 
 ## Quick Start
 
-### Prerequisites
-
-- Node.js 20+
-- Python 3.11+
-- Docker (optional)
-
-### Backend
+### Backend API (local pipeline)
 
 ```bash
 cd backend
 python -m venv .venv
-.venv\Scripts\activate        # Windows
+.venv\Scripts\activate
 pip install -r requirements.txt
-pip install pre-commit
-pre-commit install
+python scripts/ingest_rag.py
 uvicorn main:app --reload
 ```
-
-API: http://localhost:8000  
-Docs: http://localhost:8000/docs
 
 ### Frontend
 
@@ -53,45 +47,45 @@ npm run dev
 
 Dashboard: http://localhost:3000
 
-### Docker
+### Band agents (production demo)
 
-```bash
-docker compose up --build
-```
+1. Register 4 agents on the Band dashboard (`intake`, `firewall`, `assessment`, `payout`)
+2. Copy config files:
+   ```bash
+   cd backend
+   cp agent_config.yaml.example agent_config.yaml
+   cp .env.example .env
+   # Fill in agent IDs, API keys, and AIML_API_KEY
+   ```
+3. Ingest RAG data: `python scripts/ingest_rag.py`
+4. Start all agents:
+   ```bash
+   python scripts/start_agents.py
+   ```
+5. Add all 4 agents to the same Band chatroom and message `@intake`
 
 ## Agents
 
 | Agent | Role |
 |-------|------|
-| **Intake** | Receives and normalizes incoming claims |
-| **Firewall** | Redacts PII (SSN, etc.) before downstream processing |
-| **Assessment** | Evaluates claim validity and approves/denies |
-| **Payout** | Processes approved payouts |
+| **Intake** | Extracts claim fields, validates policy via mock DB |
+| **Firewall** | Field-level governance via `policy.yaml` (block/transform/justify) |
+| **Assessment** | RAG-based coverage analysis, approve/deny/escalate |
+| **Payout** | Payment-only clearance, simulated disbursement |
 
 ## Decision Log
 
-The dashboard reads from `backend/decision_log/audit_log.json` to visualize the agent pipeline in real time:
-
-```
-10:01 Intake Agent
-10:02 Firewall Redacted SSN
-10:03 Assessment Approved Claim
-10:04 Payout Processed
-```
+The dashboard reads `/api/decision-log` showing:
+- Agent pipeline steps (`audit_log.json`)
+- Firewall field-level decisions (`logs/decisions.jsonl`)
 
 ## Testing
 
 ```bash
-# Backend
-cd backend && pytest
-
-# Frontend
+cd backend && .venv\Scripts\python.exe -m pytest -v
 cd frontend && npm test
 ```
 
-## CI
+## Sample claim (API or Band)
 
-GitHub Actions workflows run on every push:
-
-- `backend-ci.yml` — Ruff lint/format + pytest
-- `frontend-ci.yml` — ESLint + Jest
+Policy `NVC-10001`, amount `$4,800`, include SSN and bank account to demo firewall redaction.

@@ -1,132 +1,145 @@
-import re
 import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from band.client import publish_agent_event
-from decision_log.logger import log_decision
+from agents.assessment.logic import assess_claim
+from agents.firewall.engine import apply_policy
+from agents.intake.tools import lookup_policy_sync
+from decision_log.logger import log_decision, log_firewall_decisions
+from mesh_platform.client import publish_agent_event
 from models.claim import Claim
+from models.claim_record import ClaimRecord
 from models.schemas import ClaimCreate, ClaimStatus
 
 
+def _to_claim_record(data: ClaimCreate, claim_id: str) -> ClaimRecord:
+    return ClaimRecord(
+        claim_id=claim_id,
+        name=data.claimant_name.strip().title(),
+        policy_number=data.policy_number.strip().upper(),
+        accident_description=data.description.strip(),
+        claim_amount=round(data.amount, 2),
+        coverage_type="collision",
+        claim_category="collision",
+        confidence=0.95,
+        ssn=data.ssn,
+        bank_account=data.bank_account,
+    )
+
+
 async def run_claim_pipeline(session: AsyncSession, claim_data: ClaimCreate) -> Claim:
-    """Process a claim through all four agents sequentially."""
+    """Process a claim through the 4-agent pipeline with firewall clearance."""
+    claim_id = str(uuid.uuid4())
+    record = _to_claim_record(claim_data, claim_id)
+
     claim = Claim(
-        id=str(uuid.uuid4()),
-        claimant_name=claim_data.claimant_name,
-        policy_number=claim_data.policy_number,
-        amount=claim_data.amount,
-        description=claim_data.description,
-        ssn=claim_data.ssn,
+        id=claim_id,
+        claimant_name=record.name,
+        policy_number=record.policy_number,
+        amount=record.claim_amount,
+        description=record.accident_description or "",
+        ssn=record.ssn,
         status=ClaimStatus.PENDING.value,
     )
     session.add(claim)
     await session.flush()
 
-    claim = await _run_intake(session, claim)
-    claim = await _run_firewall(session, claim)
-    claim = await _run_assessment(session, claim)
-    claim = await _run_payout(session, claim)
-
-    await session.commit()
-    await session.refresh(claim)
-    return claim
-
-
-async def _run_intake(session: AsyncSession, claim: Claim) -> Claim:
+    # Intake
     claim.status = ClaimStatus.INTAKE.value
     claim.updated_at = datetime.now(UTC)
+    policy = lookup_policy_sync(record.policy_number)
+    if not policy.get("active"):
+        claim.status = ClaimStatus.DENIED.value
+        log_decision(
+            agent="Intake Agent",
+            action="Policy invalid",
+            claim_id=claim.id,
+            details=policy.get("error", "Policy not found or inactive"),
+        )
+        await session.commit()
+        await session.refresh(claim)
+        return claim
 
     log_decision(
         agent="Intake Agent",
         action="Received claim",
         claim_id=claim.id,
-        details=f"Policy {claim.policy_number}, amount ${claim.amount:.2f}",
+        details=f"Policy {record.policy_number}, amount ${record.claim_amount:.2f}",
     )
     await publish_agent_event("Intake Agent", "Claim received", claim.id)
-    await session.flush()
-    return claim
 
-
-async def _run_firewall(session: AsyncSession, claim: Claim) -> Claim:
+    # Assessment clearance via Firewall
     claim.status = ClaimStatus.FIREWALL.value
-    claim.updated_at = datetime.now(UTC)
+    assessment_record, fw_decisions = apply_policy(record, "assessment")
+    log_firewall_decisions(assessment_record.claim_id, "assessment", fw_decisions)
+    log_decision(
+        agent="Firewall Agent",
+        action="Cleared for assessment",
+        claim_id=claim.id,
+        details=f"{len(fw_decisions)} field decisions applied",
+    )
+    await publish_agent_event("Firewall Agent", "Assessment clearance", claim.id)
 
-    if claim.ssn:
-        claim.ssn = re.sub(r"\d", "X", claim.ssn)
-        log_decision(
-            agent="Firewall Agent",
-            action="Redacted SSN",
-            claim_id=claim.id,
-            details="PII sanitized before downstream processing",
-        )
-        await publish_agent_event("Firewall Agent", "SSN redacted", claim.id)
-    else:
-        log_decision(
-            agent="Firewall Agent",
-            action="No PII found",
-            claim_id=claim.id,
-        )
-
-    await session.flush()
-    return claim
-
-
-async def _run_assessment(session: AsyncSession, claim: Claim) -> Claim:
+    # Assessment
     claim.status = ClaimStatus.ASSESSMENT.value
-    claim.updated_at = datetime.now(UTC)
+    decision, reason = assess_claim(assessment_record)
+    assessment_record.decision = decision
+    assessment_record.decision_reason = reason
 
-    approved = claim.amount <= 10_000
-
-    if approved:
+    if decision == "approve":
         claim.status = ClaimStatus.APPROVED.value
         log_decision(
             agent="Assessment Agent",
             action="Approved claim",
             claim_id=claim.id,
-            details=f"Amount ${claim.amount:.2f} within policy limits",
+            details=reason,
         )
         await publish_agent_event("Assessment Agent", "Claim approved", claim.id)
     else:
         claim.status = ClaimStatus.DENIED.value
         log_decision(
             agent="Assessment Agent",
-            action="Denied claim",
+            action=f"{decision.title()} claim",
             claim_id=claim.id,
-            details=f"Amount ${claim.amount:.2f} exceeds $10,000 limit",
+            details=reason,
         )
-        await publish_agent_event("Assessment Agent", "Claim denied", claim.id)
-
-    await session.flush()
-    return claim
-
-
-async def _run_payout(session: AsyncSession, claim: Claim) -> Claim:
-    if claim.status != ClaimStatus.APPROVED.value:
-        log_decision(
-            agent="Payout Agent",
-            action="Skipped payout",
-            claim_id=claim.id,
-            details="Claim not approved",
-        )
-        await session.flush()
+        await publish_agent_event("Assessment Agent", f"Claim {decision}", claim.id)
+        await session.commit()
+        await session.refresh(claim)
         return claim
 
-    claim.status = ClaimStatus.PAYOUT.value
-    claim.updated_at = datetime.now(UTC)
+    # Payout clearance via Firewall
+    payout_record, payout_decisions = apply_policy(assessment_record, "payout")
+    log_firewall_decisions(payout_record.claim_id, "payout", payout_decisions)
+    log_decision(
+        agent="Firewall Agent",
+        action="Cleared for payout",
+        claim_id=claim.id,
+        details=f"{len(payout_decisions)} field decisions applied",
+    )
 
+    # Payout
+    claim.status = ClaimStatus.PAYOUT.value
+    last_four = (
+        payout_record.bank_account[-4:]
+        if payout_record.bank_account and len(payout_record.bank_account) >= 4
+        else "****"
+    )
     log_decision(
         agent="Payout Agent",
         action="Processed payout",
         claim_id=claim.id,
-        details=f"${claim.amount:.2f} disbursed to {claim.claimant_name}",
+        details=(
+            f"${payout_record.claim_amount:.2f} disbursed to account ending {last_four}"
+        ),
     )
     await publish_agent_event("Payout Agent", "Payout processed", claim.id)
-
     claim.status = ClaimStatus.PAID.value
-    await session.flush()
+
+    await session.commit()
+    await session.refresh(claim)
     return claim
 
 

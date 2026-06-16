@@ -1,16 +1,1 @@
-[
-  {
-    "timestamp": "08:04",
-    "agent": "Intake Agent",
-    "action": "Received claim",
-    "claim_id": "abc-123",
-    "details": null
-  },
-  {
-    "timestamp": "08:04",
-    "agent": "Firewall Agent",
-    "action": "Redacted SSN",
-    "claim_id": "abc-123",
-    "details": null
-  }
-]
+[]

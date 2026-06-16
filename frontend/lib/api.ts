@@ -15,6 +15,7 @@ export interface ClaimCreate {
   amount: number;
   description: string;
   ssn?: string;
+  bank_account?: string;
 }
 
 export interface DecisionLogEntry {
@@ -23,6 +24,7 @@ export interface DecisionLogEntry {
   action: string;
   claim_id?: string;
   details?: string;
+  source?: "pipeline" | "firewall";
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
