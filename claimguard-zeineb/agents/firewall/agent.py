@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import re
 from typing import TypedDict
 
 from dotenv import load_dotenv
@@ -28,6 +29,11 @@ def process_clearance(state: FirewallState) -> FirewallState:
         raw = json.dumps(last_msg.content)
 
     print(f"[Firewall] Received message: {raw[:200]}")
+
+    # Extract JSON object from raw message — Band prepends "[Sender]: @[[uuid]]" prefix
+    json_match = re.search(r'\{.*\}', raw, re.DOTALL)
+    if json_match:
+        raw = json_match.group(0)
 
     try:
         payload = json.loads(raw)
