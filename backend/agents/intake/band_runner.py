@@ -1,18 +1,18 @@
 import asyncio
 from typing import Annotated, TypedDict
 
+from band import Agent
+from band.adapters import LangGraphAdapter
+from band.config import load_agent_config
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, ToolMessage
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
-from band import Agent
-from band.adapters import LangGraphAdapter
-from band.config import load_agent_config
 
-from claimguard.agents.intake.tools import lookup_policy
-from claimguard.agents.intake.prompts import SYSTEM_PROMPT
-from claimguard.shared.llm import get_chat_model
+from agents.intake.prompts import SYSTEM_PROMPT
+from agents.intake.langchain_tools import lookup_policy
+from shared.llm import get_chat_model
 
 
 class AgentState(TypedDict):
@@ -57,11 +57,17 @@ def build_react_graph(llm, tools, checkpointer=None):
 async def main():
     load_dotenv()
     agent_id, api_key = load_agent_config("intake")
+    print(f"Loaded agent config for {agent_id}")
+    print(f"Connecting to Band with api_key={api_key[:4]}...")
     llm = get_chat_model()
     checkpointer = InMemorySaver()
 
     def graph_factory(band_tools):
-        return build_react_graph(llm, band_tools + [lookup_policy], checkpointer=checkpointer)
+        return build_react_graph(
+            llm,
+            band_tools + [lookup_policy],
+            checkpointer=checkpointer,
+        )
 
     adapter = LangGraphAdapter(
         graph_factory=graph_factory,

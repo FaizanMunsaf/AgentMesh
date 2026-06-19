@@ -1,18 +1,17 @@
 import asyncio
 from typing import Annotated, TypedDict
 
+from band import Agent
+from band.adapters import LangGraphAdapter
+from band.config import load_agent_config
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, ToolMessage
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
-from band import Agent
-from band.adapters import LangGraphAdapter
-from band.config import load_agent_config
 
-from claimguard.agents.intake.tools import lookup_policy
-from claimguard.agents.intake.prompts import SYSTEM_PROMPT
-from claimguard.shared.llm import get_chat_model
+from agents.payout.prompts import SYSTEM_PROMPT
+from shared.llm import get_chat_model
 
 
 class AgentState(TypedDict):
@@ -56,12 +55,13 @@ def build_react_graph(llm, tools, checkpointer=None):
 
 async def main():
     load_dotenv()
-    agent_id, api_key = load_agent_config("intake")
+    agent_id, api_key = load_agent_config("payout")
+
     llm = get_chat_model()
     checkpointer = InMemorySaver()
 
     def graph_factory(band_tools):
-        return build_react_graph(llm, band_tools + [lookup_policy], checkpointer=checkpointer)
+        return build_react_graph(llm, band_tools, checkpointer=checkpointer)
 
     adapter = LangGraphAdapter(
         graph_factory=graph_factory,
@@ -70,12 +70,12 @@ async def main():
     )
 
     agent = Agent.create(adapter=adapter, agent_id=agent_id, api_key=api_key)
-    print("Intake agent running — waiting for claim messages on Band...")
+    print("Payout agent running — waiting for approved claims on Band...")
     while True:
         try:
             await agent.run()
         except Exception as e:
-            print(f"Intake disconnected ({e}), reconnecting in 3s...")
+            print(f"Payout disconnected ({e}), reconnecting in 3s...")
             await asyncio.sleep(3)
 
 

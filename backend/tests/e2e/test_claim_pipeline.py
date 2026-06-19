@@ -19,25 +19,26 @@ async def test_claim_pipeline_e2e():
         response = await client.post(
             "/api/claims/",
             json={
-                "claimant_name": "john doe",
-                "policy_number": "pol-98765",
-                "amount": 5000.0,
-                "description": "Water damage claim",
+                "claimant_name": "jane doe",
+                "policy_number": "NVC-10001",
+                "amount": 4800.0,
+                "description": "Rear-ended at a red light, front bumper damage",
                 "ssn": "123-45-6789",
+                "bank_account": "9876543210",
             },
         )
 
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "paid"
-        assert data["claimant_name"] == "John Doe"
-        assert data["policy_number"] == "POL-98765"
+        assert data["claimant_name"] == "Jane Doe"
+        assert data["policy_number"] == "NVC-10001"
 
         log_response = await client.get("/api/decision-log/")
         log_entries = log_response.json()
-    assert len(log_entries) >= 4
-    agents = [e["agent"] for e in log_entries]
-    assert "Intake Agent" in agents
-    assert "Firewall Agent" in agents
-    assert "Assessment Agent" in agents
-    assert "Payout Agent" in agents
+        assert len(log_entries) >= 4
+        agents = [e["agent"] for e in log_entries]
+        assert "Intake Agent" in agents
+        assert "Firewall Agent" in agents
+        assert "Assessment Agent" in agents
+        assert "Payout Agent" in agents

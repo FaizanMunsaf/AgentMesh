@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from agents.intake.agent import normalize_claim
 from agents.pipeline import get_claim_by_id, list_claims, run_claim_pipeline
 from database.session import get_session
 from models.schemas import ClaimCreate, ClaimResponse, ClaimStatus
@@ -27,8 +26,7 @@ async def submit_claim(
     data: ClaimCreate,
     session: AsyncSession = Depends(get_session),
 ) -> ClaimResponse:
-    normalized = normalize_claim(data)
-    claim = await run_claim_pipeline(session, normalized)
+    claim = await run_claim_pipeline(session, data)
     return _to_response(claim)
 
 

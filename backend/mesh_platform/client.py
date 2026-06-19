@@ -1,8 +1,8 @@
-"""Band SDK integration helpers."""
+"""Band platform integration helpers for the local FastAPI pipeline."""
 
 import logging
 
-from band.config import settings
+from mesh_platform.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -14,11 +14,8 @@ def is_band_configured() -> bool:
 
 async def publish_agent_event(
     agent_name: str, message: str, claim_id: str | None = None
-):
-    """
-    Publish an event to Band when configured.
-    Falls back to local logging when Band credentials are not set.
-    """
+) -> None:
+    """Publish an event to Band when configured; otherwise log locally."""
     if not is_band_configured():
         logger.info(
             "Band not configured — local event: agent=%s claim=%s msg=%s",
@@ -28,7 +25,6 @@ async def publish_agent_event(
         )
         return
 
-    # Band SDK integration point — wire up Agent.create() per agent at runtime
     logger.info(
         "Band event: agent=%s claim=%s msg=%s",
         agent_name,

@@ -21,6 +21,7 @@ class ClaimCreate(BaseModel):
     amount: float = Field(gt=0)
     description: str
     ssn: str | None = None
+    bank_account: str | None = None
 
 
 class ClaimResponse(BaseModel):
@@ -40,3 +41,4 @@ class DecisionLogEntry(BaseModel):
     action: str
     claim_id: str | None = None
     details: str | None = None
+    source: str | None = None

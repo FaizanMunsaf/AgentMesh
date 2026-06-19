@@ -1,18 +1,18 @@
 import asyncio
 import json
-import os
 import re
 from typing import TypedDict
 
-from dotenv import load_dotenv
-from langchain_core.messages import AIMessage, BaseMessage
-from langgraph.graph import END, StateGraph
-from langgraph.checkpoint.memory import InMemorySaver
 from band import Agent
 from band.adapters import LangGraphAdapter
+from band.config import load_agent_config
+from dotenv import load_dotenv
+from langchain_core.messages import AIMessage, BaseMessage
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.graph import END, StateGraph
 
-from claimguard.agents.firewall.engine import apply_policy
-from claimguard.shared.schemas import ClaimRecord, ClearanceRequest, ClearanceResponse
+from agents.firewall.engine import apply_policy
+from models.claim_record import ClearanceRequest, ClearanceResponse
 
 
 class FirewallState(TypedDict):
@@ -40,7 +40,9 @@ def process_clearance(state: FirewallState) -> FirewallState:
         req = ClearanceRequest.model_validate(payload)
     except Exception as e:
         print(f"[Firewall] Parse error: {e}")
-        error_msg = AIMessage(content=json.dumps({"error": f"Invalid clearance request: {e}"}))
+        error_msg = AIMessage(
+            content=json.dumps({"error": f"Invalid clearance request: {e}"})
+        )
         return {"messages": state["messages"] + [error_msg]}
 
     filtered, decisions = apply_policy(req.claim, req.role)
@@ -60,23 +62,12 @@ def build_firewall_graph():
 
 async def main():
     load_dotenv()
-
-    from band.config import load_agent_config
     agent_id, api_key = load_agent_config("firewall")
 
     graph = build_firewall_graph()
+    adapter = LangGraphAdapter(graph=graph, checkpointer=InMemorySaver())
 
-    adapter = LangGraphAdapter(
-        graph=graph,
-        checkpointer=InMemorySaver(),
-    )
-
-    agent = Agent.create(
-        adapter=adapter,
-        agent_id=agent_id,
-        api_key=api_key,
-    )
-
+    agent = Agent.create(adapter=adapter, agent_id=agent_id, api_key=api_key)
     print("Firewall agent running — waiting for clearance requests on Band...")
     while True:
         try:

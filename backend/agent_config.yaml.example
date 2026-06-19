@@ -1,0 +1,12 @@
+intake:
+  agent_id: "<uuid-from-band-dashboard>"
+  api_key: "<per-agent-api-key>"
+firewall:
+  agent_id: "<uuid-from-band-dashboard>"
+  api_key: "<per-agent-api-key>"
+assessment:
+  agent_id: "<uuid-from-band-dashboard>"
+  api_key: "<per-agent-api-key>"
+payout:
+  agent_id: "<uuid-from-band-dashboard>"
+  api_key: "<per-agent-api-key>"
