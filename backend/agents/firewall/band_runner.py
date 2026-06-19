@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 from typing import TypedDict
 
 from band import Agent
@@ -20,16 +21,25 @@ class FirewallState(TypedDict):
 
 def process_clearance(state: FirewallState) -> FirewallState:
     last_msg = state["messages"][-1]
-    raw = (
-        last_msg.content
-        if isinstance(last_msg.content, str)
-        else json.dumps(last_msg.content)
-    )
+    if isinstance(last_msg, tuple):
+        raw = last_msg[1]
+    elif isinstance(last_msg.content, str):
+        raw = last_msg.content
+    else:
+        raw = json.dumps(last_msg.content)
+
+    print(f"[Firewall] Received message: {raw[:200]}")
+
+    # Extract JSON object from raw message — Band prepends "[Sender]: @[[uuid]]" prefix
+    json_match = re.search(r'\{.*\}', raw, re.DOTALL)
+    if json_match:
+        raw = json_match.group(0)
 
     try:
         payload = json.loads(raw)
         req = ClearanceRequest.model_validate(payload)
     except Exception as e:
+        print(f"[Firewall] Parse error: {e}")
         error_msg = AIMessage(
             content=json.dumps({"error": f"Invalid clearance request: {e}"})
         )
@@ -38,6 +48,7 @@ def process_clearance(state: FirewallState) -> FirewallState:
     filtered, decisions = apply_policy(req.claim, req.role)
     response = ClearanceResponse(filtered_claim=filtered, decisions=decisions)
     reply = AIMessage(content=response.model_dump_json())
+    print(f"[Firewall] Sending clearance response for role={req.role}")
     return {"messages": state["messages"] + [reply]}
 
 
@@ -58,7 +69,12 @@ async def main():
 
     agent = Agent.create(adapter=adapter, agent_id=agent_id, api_key=api_key)
     print("Firewall agent running — waiting for clearance requests on Band...")
-    await agent.run()
+    while True:
+        try:
+            await agent.run()
+        except Exception as e:
+            print(f"Firewall disconnected ({e}), reconnecting in 3s...")
+            await asyncio.sleep(3)
 
 
 if __name__ == "__main__":
