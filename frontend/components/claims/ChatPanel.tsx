@@ -17,6 +17,7 @@ export default function ChatPanel() {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [started, setStarted] = useState(false);
+  const [activeTab, setActiveTab] = useState<'chat' | 'guidelines'>('chat');
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { 
@@ -53,9 +54,89 @@ export default function ChatPanel() {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--border)', overflow: 'hidden' }}>
-      
-      {/* Messages viewport */}
+
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '8px', padding: '12px 20px', borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
+        <button
+          onClick={() => setActiveTab('chat')}
+          style={{
+            padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+            background: activeTab === 'chat' ? 'var(--bg-elevated)' : 'transparent',
+            color: activeTab === 'chat' ? 'var(--text-primary)' : 'var(--text-muted)',
+            fontWeight: 600,
+          }}
+        >Chat</button>
+        <button
+          onClick={() => setActiveTab('guidelines')}
+          style={{
+            padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+            background: activeTab === 'guidelines' ? 'var(--bg-elevated)' : 'transparent',
+            color: activeTab === 'guidelines' ? 'var(--text-primary)' : 'var(--text-muted)',
+            fontWeight: 600,
+          }}
+        >Guidelines</button>
+      </div>
+
+      {/* Messages viewport or Guidelines */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {activeTab === 'guidelines' ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ fontSize: '20px', fontWeight: 700 }}>How to use ClaimGuard AI</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
+              ClaimGuard AI is organized as a band of specialised agents that orchestrate automatically to process claims. Use the chat tab to submit a claim or ask questions — the system will route the request through the intake → assessment → firewall → payout agents until the claim lifecycle completes.
+            </div>
+
+            <div style={{ fontWeight: 600, marginTop: '6px' }}>Orchestration flow</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: 1.5 }}>
+              - Intake agent: collects claim details and normalizes input (dates in ISO format, amounts as numbers).
+              <br />- Assessment agent: validates coverage, citations, and prepares decision rationale.
+              <br />- Firewall agent: performs clearance/role checks and policy enforcement.
+              <br />- Payout agent: applies authority limits and issues approvals/payments.
+            </div>
+
+            <div style={{ fontWeight: 600, marginTop: '6px' }}>Agent connections</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: 1.5 }}>
+              Agents connect via band agent cards visible in the UI (Agent Pipeline). Each card represents an agent role and shows live status, messages, and timestamps during orchestration.
+            </div>
+
+            <div style={{ fontWeight: 600, marginTop: '6px' }}>Policies used by the bot</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: 1.5 }}>
+              The demo chat uses a small set of mock policies to make decisions. See the mock policies used by the demo: <a href="/backend/data/mock_policies.json" target="_blank">mock_policies.json</a>.
+            </div>
+
+            <div style={{ fontWeight: 700, marginTop: '8px' }}>Examples</div>
+
+            <div style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', padding: '12px', borderRadius: '8px', fontFamily: 'var(--font-sans)', fontSize: '13px' }}>
+              <div style={{ fontWeight: 600, marginBottom: '8px' }}>Example: Full claim lifecycle (demo)</div>
+              <div style={{ whiteSpace: 'pre-wrap', color: 'var(--text-primary)' }}>{`@Hackthon Intake new claim: John Smith, Policy NVC-10002, collision, I was rear-ended on 2026-06-16 at a parking lot by another vehicle causing front bumper damage, amount $500
+
+@Hackthon Intake: Policy NVC-10002 is active and held by John Smith with collision coverage. Missing info: incident date in ISO format and claim amount as a number.
+
+@Hackthon Intake: 2026-06-16, $500
+
+@Hackthon Intake: Thank you — validating claim for John Smith. Proceeding with validation...
+
+@Hackthon-Assessment -> Hackthon-firewall: clearance_request {...}
+
+@Hackthon-Assessment -> Hackthon-payout: approved_claim {...}
+
+@Hackthon-payout: ✅ Claim Approved & Payment Processed — Claimant: John Smith | Policy: NVC-10002 | Amount: $500`}</div>
+            </div>
+
+            <div style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', padding: '12px', borderRadius: '8px', fontFamily: 'var(--font-sans)', fontSize: '13px' }}>
+              <div style={{ fontWeight: 600, marginBottom: '8px' }}>Example 1 — Quick intake</div>
+              <div style={{ color: 'var(--text-primary)' }}>User: I was hit in the parking lot, rear bumper damage. Policy NVC-10005. Incident: 2026-05-10. Amount: 750</div>
+              <div style={{ color: 'var(--text-muted)', marginTop: '6px' }}>Bot: Intake agent asks for any missing ISO date or numeric amount and then routes to Assessment.</div>
+            </div>
+
+            <div style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', padding: '12px', borderRadius: '8px', fontFamily: 'var(--font-sans)', fontSize: '13px' }}>
+              <div style={{ fontWeight: 600, marginBottom: '8px' }}>Example 2 — Policy question</div>
+              <div style={{ color: 'var(--text-primary)' }}>User: Does my policy NVC-10002 cover collision if I was rear-ended?</div>
+              <div style={{ color: 'var(--text-muted)', marginTop: '6px' }}>Bot: Assessment agent checks <a href="/backend/data/mock_policies.json" target="_blank">mock_policies.json</a> and responds with coverage details and next steps.</div>
+            </div>
+          </div>
+        ) : (
+          <>
         
         {/* Empty placeholder state */}
         {!started && messages.length === 0 && (
@@ -128,10 +209,13 @@ export default function ChatPanel() {
         {/* Typing indicator instance */}
         {isTyping && <TypingIndicator />}
         <div ref={bottomRef} />
+          </>
+        )}
       </div>
 
       {/* Input panel block */}
-      <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
+      {activeTab === 'chat' && (
+        <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
         <div style={{
           display: 'flex', gap: '10px', alignItems: 'flex-end',
           background: 'var(--bg-elevated)', border: '1px solid var(--border)',
@@ -166,7 +250,8 @@ export default function ChatPanel() {
         <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '6px', textAlign: 'center' }}>
           Enter to send · Shift+Enter for new line · All data encrypted end-to-end
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

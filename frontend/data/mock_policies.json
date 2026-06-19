@@ -1,0 +1,42 @@
+﻿{
+  "NVC-10001": {
+    "active": true,
+    "holder_name": "Jane Doe",
+    "coverage_types": ["collision", "liability"],
+    "coverage_limit": 50000,
+    "active_since": "2024-01-01",
+    "active_until": "2027-01-01"
+  },
+  "NVC-10002": {
+    "active": true,
+    "holder_name": "John Smith",
+    "coverage_types": ["collision", "medical", "theft"],
+    "coverage_limit": 75000,
+    "active_since": "2023-06-01",
+    "active_until": "2026-06-01"
+  },
+  "NVC-10003": {
+    "active": true,
+    "holder_name": "Maria Garcia",
+    "coverage_types": ["collision", "liability", "medical"],
+    "coverage_limit": 100000,
+    "active_since": "2025-03-01",
+    "active_until": "2028-03-01"
+  },
+  "NVC-10004": {
+    "active": false,
+    "holder_name": "Bob Wilson",
+    "coverage_types": ["collision"],
+    "coverage_limit": 25000,
+    "active_since": "2022-01-01",
+    "active_until": "2024-01-01"
+  },
+  "NVC-10005": {
+    "active": true,
+    "holder_name": "Alice Chen",
+    "coverage_types": ["theft", "liability"],
+    "coverage_limit": 60000,
+    "active_since": "2024-06-01",
+    "active_until": "2027-06-01"
+  }
+}
