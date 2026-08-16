@@ -118,7 +118,3 @@ cd frontend
 npm test
 ```
 
-## Next steps
-
-- Want me to add this `vercel.json` to the repo root and commit? I already added it — I can also create a short `AGENTS.md` with example messages for each agent if you want.
-
